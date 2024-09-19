@@ -1,18 +1,21 @@
-const express = require('express');
-const { Configuration, OpenAIApi } = require('openai');
-const twilio = require('twilio');
-const bodyParser = require('body-parser');
-require('dotenv').config();
+import express from 'express';
+import OpenAI from 'openai';
+import twilio from 'twilio';
+import bodyParser from 'body-parser';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+
 // Configuración de OpenAI
-const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY,
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY, 
 });
-const openai = new OpenAIApi(configuration);
+
 
 // Ruta para recibir la llamada de Twilio
 app.post('/voice', (req, res) => {
@@ -35,23 +38,32 @@ app.post('/voice', (req, res) => {
 
 // Ruta para manejar la transcripción de la grabación
 app.post('/handle-transcription', async (req, res) => {
-    const transcription = req.body.TranscriptionText;
+    try {
+        
+        const transcription = req.body.TranscriptionText;
+        const gptResponse = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [{
+                content: `Respond in Spanish: ${transcription}`,
+                role: "user"
+            }],
+            max_tokens: 150
+        });
 
-    // Llamada a OpenAI para generar una respuesta
-    const gptResponse = await openai.createCompletion({
-        model: 'text-davinci-003',
-        prompt: `Respond in Spanish: ${transcription}`,
-        max_tokens: 150,
-    });
+        const responseText = gptResponse.choices[0].message.content;
 
-    const responseText = gptResponse.data.choices[0].text.trim();
+        // Respuesta de Twilio con la respuesta de ChatGPT
+        const twiml = new twilio.twiml.VoiceResponse();
+        twiml.say(responseText);
+        res.type('text/xml');
+        res.send(twiml.toString());
 
-    // Respuesta de Twilio con la respuesta de ChatGPT
-    const twiml = new twilio.twiml.VoiceResponse();
-    twiml.say(responseText);
+    } catch (error) {
+        console.error('Error al procesar la transcripción:', error);
+        res.status(500).send('Error al procesar la transcripción');
+    }
 
-    res.type('text/xml');
-    res.send(twiml.toString());
+
 });
 
 // Iniciar el servidor

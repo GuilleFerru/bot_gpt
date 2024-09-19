@@ -1,19 +1,17 @@
 {
   "name": "bot_gpt",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "dev": "nodemon start index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
-    "body-parser": "^1.20.3",
-    "dotenv": "^16.4.5",
-    "express": "^4.21.0",
-    "openai": "^4.62.0",
-    "twilio": "^5.3.0"
+    "openai": "^3.0.0",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "twilio": "^3.70.0",
+    "body-parser": "^1.19.0"
   }
 }
